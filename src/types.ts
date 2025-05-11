@@ -136,3 +136,29 @@ export enum CanvasMode {
   Pressing,
   RightClick,
 }
+
+// ... existing code ...
+
+// Tipos para la generación de Flutter con IA
+export interface FlutterWidget {
+  type: string;
+  text?: string;
+  description?: string;
+  properties?: Record<string, any>;
+  children?: FlutterWidget[];
+}
+
+export interface FlutterView {
+  viewName: string;
+  widgets: FlutterWidget[];
+}
+
+export interface FlutterFile {
+  path: string;
+  content: string;
+}
+
+export interface Base64ConversionResult {
+  base64Data: string;
+  mimeType: string;
+}

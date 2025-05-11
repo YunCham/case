@@ -2,6 +2,7 @@ import "~/styles/globals.css";
 
 import { Inter } from "next/font/google";
 import { type Metadata } from "next";
+import { ToastProvider } from "~/contexts/ToastContext";
 
 export const metadata: Metadata = {
   title: "Drawing",
@@ -19,7 +20,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${inter.className}`}>
-      <body className="overflow-hidden overscroll-none">{children}</body>
+      <body className="overflow-hidden overscroll-none">
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

@@ -42,17 +42,16 @@ import SelectionTools from "./SelectionTools";
 import Sidebars from "../sidebars/Sidebars";
 import MultiplayerGuides from "./MultiplayerGuides";
 import { User } from "@prisma/client";
+import { ActionButton } from "./ActionButtonProps";
 import { GoogleGenAI, createUserContent } from "@google/genai";
 
 // Importar el hook para generar proyectos Angular
 import { useAngularProjectGenerator } from "../angular-generator/useAngularProjectGenerator";
-
 // Importar el hook para generar proyectos flutter
 import { useFlutterProjectGenerator } from "~/components/flutter-generator/useFlutterProjectGenerator";
-
-
 //Importar el hook para generar copy&pase con teclado
 import useCopyPaste from "~/hooks/useCopyPaste";
+import { useFlutterAIGeneratorGEMINI } from "~/hooks/useFlutterAIGenerator";
 
 const MAX_LAYERS = 100;
 
@@ -67,12 +66,25 @@ export default function Canvas({
 }) {
   // Obtener la función para generar proyectos Angular
   const generateAngularProject = useAngularProjectGenerator(roomName);
-
-   // Obtener la función para generar proyectos Flutter
-   const generateFlutterProject = useFlutterProjectGenerator(roomName);
+  // Obtener la función para generar proyectos Flutter
+  const generateFlutterProject = useFlutterProjectGenerator(roomName);
 
   // Obtener la funcion para copiar y pegar capas
   const { copyLayers, pasteLayers } = useCopyPaste();
+
+  const generateFlutterAIProject = useFlutterAIGeneratorGEMINI(roomName);
+  const [loading, setLoading] = useState(false); // Nuevo estado para el indicador de carga
+
+  const generateFlutter = async () => {
+    setLoading(true);
+    try {
+      await generateFlutterAIProject(); // Aquí se invoca la mutación real
+    } catch (err) {
+      console.error("Error al generar proyecto:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [leftIsMinimized, setLeftIsMinimized] = useState(false);
   const [isProcessingSketch, setIsProcessingSketch] = useState(false);
@@ -756,7 +768,7 @@ export default function Canvas({
       <main className="fixed left-0 right-0 h-screen overflow-y-auto">
         {/* Botones de exportación, importación y procesamiento de bocetos */}
         <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 transform gap-2">
-  {/* <button 
+          {/* <button 
     onClick={() => exportToJSON()} 
     className="rounded bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600" 
     title="Export to JSON (Ctrl+S)" 
@@ -764,7 +776,7 @@ export default function Canvas({
     Export JSON 
   </button> */}
 
-  {/* <label className="cursor-pointer rounded bg-green-500 px-3 py-1 text-sm text-white hover:bg-green-600"> 
+          {/* <label className="cursor-pointer rounded bg-green-500 px-3 py-1 text-sm text-white hover:bg-green-600"> 
     Import JSON 
     <input 
       ref={fileInputRef} 
@@ -776,59 +788,128 @@ export default function Canvas({
     /> 
   </label> */}
 
-  <label 
-    className={`${
-      isProcessingSketch
-        ? "bg-gray-100 text-gray-400"
-        : "bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700"
-    } cursor-pointer rounded-full p-3 shadow-md transition-all duration-200 flex items-center justify-center w-10 h-10`} 
-    title="Convertir Boceto a Diseño con Gemini AI" 
-  > 
-    {isProcessingSketch ? (
-      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-    ) : (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    )}
-    <input 
-      ref={sketchImageInputRef} 
-      type="file" 
-      accept="image/*" 
-      onChange={handleSketchUpload} 
-      className="hidden" 
-      disabled={isProcessingSketch} 
-    /> 
-  </label> 
+          <label
+            className={`${
+              isProcessingSketch
+                ? "bg-gray-100 text-gray-400"
+                : "bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700"
+            } flex h-10 w-10 cursor-pointer items-center justify-center rounded-full p-3 shadow-md transition-all duration-200`}
+            title="Convertir Boceto a Diseño con Gemini AI"
+          >
+            {isProcessingSketch ? (
+              <svg
+                className="h-5 w-5 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            )}
+            <input
+              ref={sketchImageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleSketchUpload}
+              className="hidden"
+              disabled={isProcessingSketch}
+            />
+          </label>
 
-  {/* Nuevo botón para generar proyecto Angular */} 
-  <button 
-    onClick={() => generateAngularProject()} 
-    className="rounded-full p-3 bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-md transition-all duration-200 flex items-center justify-center w-10 h-10" 
-    title="Generar Proyecto Angular" 
-  > 
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </svg>
-  </button> 
+          {/* Nuevo botón para generar proyecto Angular */}
+          <button
+            onClick={() => generateAngularProject()}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-600 p-3 text-white shadow-md transition-all duration-200 hover:from-red-600 hover:to-pink-700"
+            title="Generar Proyecto Angular"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </button>
 
-  <button 
-    onClick={() => generateFlutterProject()} 
-    className="rounded-full p-3 bg-gradient-to-r from-blue-500 to-pink-600 text-white hover:from-blue-600 hover:to-pink-700 shadow-md transition-all duration-200 flex items-center justify-center w-10 h-10" 
-    title="Generar Proyecto Flutter" 
-  > 
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </svg>
-  </button> 
-</div>
+          <button
+            onClick={() => generateFlutterProject()}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-pink-600 p-3 text-white shadow-md transition-all duration-200 hover:from-blue-600 hover:to-pink-700"
+            title="Generar Proyecto Flutter"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </button>
+
+          {/* Nuevo botón para generar proyecto Flutter 2.0 */}
+
+          <ActionButton
+            title="Generar Proyecto Flutter"
+            onClick={() => generateFlutter()}
+            isLoading={loading}
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 256 317"
+                className="h-5 w-5"
+              >
+                <g fill="none">
+                  <path
+                    fill="#42A5F5"
+                    d="M14.1 158.5 141.4 31.3h78.6L92.9 158.5l-78.8 78.9H0z"
+                  />
+                  <path fill="#0D47A1" d="m92.9 237.4 55.3 55.3h78.6l-94-94z" />
+                  <path fill="#42A5F5" d="m92.9 237.4 94-94-38.8-38.9-94 94z" />
+                </g>
+              </svg>
+            }
+          />
+        </div>
         <div
           style={{
             backgroundColor: roomColor ? colorToCss(roomColor) : "#1e1e1e",
